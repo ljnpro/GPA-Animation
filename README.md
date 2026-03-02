@@ -25,3 +25,10 @@
 例如仓库名是 `GPA-Animation`，用户名是 `alice`，则地址是：
 
 - `https://alice.github.io/GPA-Animation/`
+
+### 如果 workflow run 被删除，如何重新创建并发布
+
+1. 确保你已经在 `Settings -> Pages` 中把 Source 设为 **GitHub Actions**。
+2. 在本地提交一次新变更（哪怕是很小的文档更新）并 push 到 `main` / `master` / `work`。
+3. 或者到 `Actions` 页面手动运行 `Deploy static page to GitHub Pages`（`workflow_dispatch`）。
+4. 等待 `Deploy to GitHub Pages` 步骤成功后，站点会自动更新。
