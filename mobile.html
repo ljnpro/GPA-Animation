@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <title>GPA Calculator (Mobile)</title>
+  <style>
+    :root{
+      --bg0:#ffffff;
+      --bg1:#f5f7ff;
+      --bg2:#eef3ff;
+
+      --text:#0b1220;
+      --muted:rgba(11,18,32,.58);
+      --hair:rgba(120,140,180,.16);
+      --hair2:rgba(120,140,180,.22);
+
+      --card: rgba(255,255,255,.68);
+      --card-strong: rgba(255,255,255,.78);
+
+      --shadow: 0 22px 60px rgba(22,40,86,.12);
+      --shadow-soft: 0 10px 28px rgba(22,40,86,.09);
+
+      --r-xl: 26px;
+      --r-lg: 18px;
+      --r-md: 14px;
+      --r-sm: 12px;
+
+      --blur: 18px;
+
+      --ease: cubic-bezier(.22,1,.36,1);
+      --ease-soft: cubic-bezier(.2,.9,.2,1);
+      --ease-spring: cubic-bezier(.175,.885,.32,1.275);
+
+      --tint: #7c9bff;                 /* weighted */
+      --tint2:#9fe4d4;
+      --tint-soft: rgba(124,155,255,.16);
+      --tint-soft2: rgba(159,228,212,.14);
+
+      --warn: #ff3b7a;
+      --warn-soft: rgba(255,59,122,.14);
+
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+
+      --dockH: 96px;
+    }
+
+    body[data-mode="unweighted"]{
+      --tint:#7ee0c7;
+      --tint2:#8fb2ff;
+      --tint-soft: rgba(126,224,199,.16);
+      --tint-soft2: rgba(143,178,255,.14);
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue",
+        "PingFang SC","Microsoft YaHei", system-ui, sans-serif;
+      color:var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background:
+        radial-gradient(760px 420px at 20% 8%, rgba(124,155,255,.18), rgba(255,255,255,0) 62%),
+        radial-gradient(720px 420px at 84% 12%, rgba(159,228,212,.16), rgba(255,255,255,0) 62%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      transition: background 520ms var(--ease);
+      overflow-x:hidden;
+      padding: 0;
+    }
+
+    body[data-mode="unweighted"]{
+      background:
+        radial-gradient(760px 420px at 20% 8%, rgba(126,224,199,.18), rgba(255,255,255,0) 62%),
+        radial-gradient(720px 420px at 84% 12%, rgba(143,178,255,.16), rgba(255,255,255,0) 62%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *, *::before, *::after{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    }
+
+    .screen{
+      width: 100vw;
+      min-height: 100vh;
+      padding-left: calc(14px + var(--safe-left));
+      padding-right: calc(14px + var(--safe-right));
+      padding-top: calc(14px + var(--safe-top));
+      padding-bottom: calc(18px + var(--safe-bot) + var(--dockH));
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .glass{
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.64);
+      outline: 1px solid var(--hair);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+    }
+
+    .header{
+      padding: 14px 14px 12px;
+      position: relative;
+      overflow:hidden;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+      will-change: transform, opacity;
+    }
+    body.is-ready .header{ transform: translateY(0); opacity: 1; }
+
+    .header::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(520px 220px at 16% 12%, rgba(255,255,255,.68), rgba(255,255,255,0) 62%),
+        radial-gradient(520px 240px at 86% 18%, rgba(255,255,255,.56), rgba(255,255,255,0) 64%);
+      opacity:.7;
+      pointer-events:none;
+    }
+    .header > *{ position: relative; z-index: 1; }
+
+    .titleRow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 44px;
+    }
+    .title{
+      margin:0;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-weight: 860;
+      text-align:center;
+    }
+    .subtitle{
+      margin: 6px 0 0;
+      font-size: 12.5px;
+      line-height: 1.4;
+      letter-spacing: .01em;
+      color: var(--muted);
+      text-align:center;
+    }
+
+    /* Segmented Control */
+    .seg{
+      margin-top: 12px;
+      position: relative;
+      height: 46px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(120,140,180,.20);
+      outline: 1px solid rgba(255,255,255,.60);
+      box-shadow: var(--shadow-soft);
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+
+    .seg .pill{
+      position:absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc(50% - 4px);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(124,155,255,.46), rgba(159,228,212,.42));
+      box-shadow: 0 16px 38px rgba(124,155,255,.20);
+      transform: translateX(0);
+      transition: transform 560ms var(--ease), box-shadow 520ms var(--ease);
+      will-change: transform;
+    }
+
+    body[data-mode="unweighted"] .seg .pill{
+      transform: translateX(100%);
+      background: linear-gradient(135deg, rgba(126,224,199,.48), rgba(143,178,255,.42));
+      box-shadow: 0 16px 38px rgba(126,224,199,.20);
+    }
+
+    .seg button{
+      border:0;
+      background: transparent;
+      border-radius: 999px;
+      min-height: 44px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 780;
+      letter-spacing: .01em;
+      color: rgba(11,18,32,.68);
+      position: relative;
+      z-index: 1;
+      transition: color 240ms var(--ease), transform 180ms var(--ease), opacity 180ms var(--ease);
+      cursor: pointer;
+    }
+    .seg button:active{ transform: scale(.98); opacity: .9; }
+    .seg button:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(124,155,255,.26);
+    }
+    body[data-mode="weighted"] .seg button[data-mode="weighted"],
+    body[data-mode="unweighted"] .seg button[data-mode="unweighted"]{
+      color: rgba(255,255,255,.96);
+      text-shadow: 0 1px 18px rgba(12,18,40,.22);
+    }
+
+    /* Metrics */
+    .metrics{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+    }
+    body.is-ready .metrics{ transform: translateY(0); opacity: 1; transition-delay: 60ms; }
+
+    .metric{
+      border-radius: 16px;
+      background: var(--card-strong);
+      border: 1px solid rgba(255,255,255,.66);
+      outline: 1px solid var(--hair);
+      box-shadow: 0 12px 30px rgba(22,40,86,.08);
+      padding: 10px 10px 9px;
+      min-height: 64px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap: 6px;
+      overflow:hidden;
+      position: relative;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+      will-change: transform, opacity;
+    }
+    body.is-ready .metric{ transform: translateY(0); opacity: 1; }
+    body.is-ready .metric:nth-child(1){ transition-delay: 90ms; }
+    body.is-ready .metric:nth-child(2){ transition-delay: 150ms; }
+    body.is-ready .metric:nth-child(3){ transition-delay: 210ms; }
+
+    .metric .k{
+      font-size: 11px;
+      letter-spacing: .02em;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .metric .v{
+      font-size: 18px;
+      line-height: 1.05;
+      font-weight: 880;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Course list */
+    .sectionTitle{
+      margin: 2px 2px 6px;
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+    }
+    body.is-ready .sectionTitle{ transform: translateY(0); opacity: 1; transition-delay: 120ms; }
+    .sectionTitle h2{
+      margin:0;
+      font-size: 13px;
+      letter-spacing: .02em;
+      font-weight: 860;
+      color: rgba(11,18,32,.78);
+    }
+    .sectionTitle .hint{
+      margin:0;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .01em;
+      white-space: nowrap;
+    }
+
+    .courseList{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+    }
+    body.is-ready .courseList{ transform: translateY(0); opacity: 1; transition-delay: 180ms; }
+
+    .courseCard{
+      border-radius: var(--r-xl);
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(255,255,255,.66);
+      outline: 1px solid var(--hair);
+      box-shadow: 0 12px 34px rgba(22,40,86,.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      overflow:hidden;
+      position: relative;
+      transform: translateY(12px);
+      opacity: 0;
+      animation: cardIn 720ms var(--ease) forwards;
+      will-change: transform, opacity;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .courseCard:active{ transform: scale(.985); }
+
+    .courseCard::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(560px 240px at 10% 0%, rgba(255,255,255,.70), rgba(255,255,255,0) 58%),
+        radial-gradient(560px 260px at 90% 18%, rgba(255,255,255,.56), rgba(255,255,255,0) 62%);
+      opacity:.55;
+      pointer-events:none;
+    }
+    .courseCard > *{ position: relative; z-index: 1; }
+
+    .courseTop{
+      padding: 12px 12px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+    }
+
+    .courseName{
+      margin:0;
+      font-size: 14px;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      font-weight: 850;
+      color: rgba(11,18,32,.92);
+      min-width: 0;
+      flex: 1 1 auto;
+      word-break: break-word;
+    }
+
+    .badge{
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      min-height: 28px;
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 780;
+      letter-spacing: .01em;
+      color: rgba(11,18,32,.72);
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(120,140,180,.18);
+      box-shadow: 0 10px 22px rgba(22,40,86,.06);
+      white-space: nowrap;
+    }
+    .badge strong{
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      color: rgba(11,18,32,.92);
+    }
+
+    .badge.changed{
+      color: rgba(255,59,122,.92);
+      background: rgba(255,255,255,.68);
+      border-color: rgba(255,59,122,.18);
+      box-shadow: 0 16px 34px rgba(255,59,122,.12);
+    }
+    .badge.changed strong{
+      color: rgba(255,59,122,.92);
+      text-shadow: 0 10px 26px rgba(255,59,122,.12);
+    }
+
+    .statsWrap{
+      position: relative;
+      border-top: 1px solid rgba(120,140,180,.12);
+      padding: 10px 0 12px;
+    }
+
+    .statsScroller{
+      display:flex;
+      gap: 10px;
+      padding: 0 12px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    .statsScroller::-webkit-scrollbar{ width: 0; height: 0; }
+
+    .statsWrap::before,
+    .statsWrap::after{
+      content:"";
+      position:absolute;
+      top: 0; bottom: 0;
+      width: 28px;
+      pointer-events:none;
+      opacity: 0;
+      transition: opacity 220ms var(--ease);
+      z-index: 2;
+    }
+    .statsWrap::before{
+      left: 0;
+      background: linear-gradient(90deg, rgba(245,247,255,.98), rgba(245,247,255,0));
+    }
+    .statsWrap::after{
+      right: 0;
+      background: linear-gradient(270deg, rgba(245,247,255,.98), rgba(245,247,255,0));
+    }
+    .courseCard[data-can-scroll="1"] .statsWrap::after{ opacity: 1; }
+    .courseCard[data-scrolled="1"] .statsWrap::before{ opacity: 1; }
+
+    .stat{
+      scroll-snap-align: start;
+      min-width: 112px;
+      max-width: 132px;
+      border-radius: 16px;
+      padding: 10px 10px 9px;
+      background: rgba(255,255,255,.64);
+      border: 1px solid rgba(120,140,180,.14);
+      box-shadow: 0 10px 24px rgba(22,40,86,.06);
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+    .stat .k{
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .02em;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .stat .v{
+      font-size: 16px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: rgba(11,18,32,.92);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .stat.tint{
+      border-color: rgba(124,155,255,.18);
+      background: linear-gradient(160deg, rgba(124,155,255,.11), rgba(159,228,212,.10));
+    }
+    body[data-mode="unweighted"] .stat.tint{
+      border-color: rgba(126,224,199,.18);
+      background: linear-gradient(160deg, rgba(126,224,199,.11), rgba(143,178,255,.10));
+    }
+
+    /* Steps */
+    .steps{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+    }
+    body.is-ready .steps{ transform: translateY(0); opacity: 1; transition-delay: 220ms; }
+
+    .panel{
+      border-radius: var(--r-xl);
+      background: rgba(255,255,255,.60);
+      border: 1px solid rgba(255,255,255,.66);
+      outline: 1px solid var(--hair);
+      box-shadow: 0 12px 34px rgba(22,40,86,.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+
+    .panelHead{
+      padding: 12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      min-height: 56px;
+    }
+
+    .panelTitle{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .panelTitle h3{
+      margin:0;
+      font-size: 13px;
+      letter-spacing: .02em;
+      font-weight: 900;
+      color: rgba(11,18,32,.80);
+      white-space: nowrap;
+    }
+    .panelTitle .line{
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, rgba(120,140,180,0), rgba(120,140,180,.22), rgba(120,140,180,0));
+      opacity: .85;
+      min-width: 18px;
+    }
+
+    .panelBtn{
+      flex: 0 0 auto;
+      border: 1px solid rgba(120,140,180,.18);
+      outline: 1px solid rgba(255,255,255,.64);
+      background: rgba(255,255,255,.66);
+      border-radius: 999px;
+      padding: 10px 12px;
+      min-height: 44px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      cursor:pointer;
+      color: rgba(11,18,32,.76);
+      font-size: 12.5px;
+      font-weight: 860;
+      letter-spacing: .01em;
+      box-shadow: 0 10px 26px rgba(22,40,86,.07);
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+      transition: transform 180ms var(--ease), background 220ms var(--ease), box-shadow 220ms var(--ease), color 220ms var(--ease);
+    }
+    .panelBtn:active{ transform: scale(.98); }
+    .panelBtn:focus-visible{
+      outline:none;
+      box-shadow: 0 0 0 4px rgba(124,155,255,.26), 0 16px 40px rgba(22,40,86,.10);
+    }
+
+    .chev{
+      width: 12px; height: 12px;
+      position: relative;
+      transform: rotate(0deg);
+      transition: transform 360ms var(--ease);
+      opacity: .9;
+    }
+    .chev::before{
+      content:"";
+      position:absolute;
+      inset: 1px;
+      border-right: 2px solid rgba(11,18,32,.60);
+      border-bottom: 2px solid rgba(11,18,32,.60);
+      transform: rotate(45deg);
+      border-radius: 1px;
+    }
+    .panel.is-open .chev{ transform: rotate(180deg); }
+
+    .panelBody{
+      height: 0;
+      overflow:hidden;
+      border-top: 1px solid rgba(120,140,180,.12);
+      transition: height 560ms var(--ease);
+      will-change: height;
+    }
+
+    .timeline{
+      position: relative;
+      padding: 12px 12px 14px 34px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .timeline::before{
+      content:"";
+      position:absolute;
+      left: 18px;
+      top: 18px;
+      bottom: 18px;
+      border-left: 1px dashed rgba(120,140,180,.30);
+      opacity: .9;
+    }
+
+    .step{
+      position: relative;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.66);
+      border: 1px solid rgba(120,140,180,.14);
+      box-shadow: 0 10px 22px rgba(22,40,86,.06);
+      color: rgba(11,18,32,.88);
+      font-size: 12.5px;
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums;
+      transform: translateX(-12px);
+      opacity: 0;
+      transition: transform 560ms var(--ease), opacity 560ms var(--ease), filter 220ms var(--ease);
+      will-change: transform, opacity;
+    }
+    .step::after{
+      content:"";
+      position:absolute;
+      left: -22px;
+      top: 14px;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      outline: 1px solid rgba(120,140,180,.24);
+      box-shadow: 0 10px 22px rgba(22,40,86,.10);
+    }
+    .step::before{
+      content:"";
+      position:absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 16px 0 0 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0), var(--bar), rgba(255,255,255,0));
+      transform: scaleY(0);
+      transform-origin: top;
+      transition: transform 640ms var(--ease);
+      opacity: .95;
+    }
+    .step.mul{ --bar: rgba(124,155,255,.92); }
+    .step.add{ --bar: rgba(159,228,212,.92); }
+    body[data-mode="unweighted"] .step.mul{ --bar: rgba(126,224,199,.92); }
+    body[data-mode="unweighted"] .step.add{ --bar: rgba(143,178,255,.86); }
+
+    .panel.is-open .step{
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: calc(var(--i) * 48ms);
+    }
+    .panel.is-open .step::before{
+      transform: scaleY(1);
+      transition-delay: calc(var(--i) * 48ms + 60ms);
+    }
+
+    .panel.is-open.is-closing .step{
+      opacity: 0;
+      transform: translateY(10px);
+      transition-delay: calc(var(--rev) * 38ms);
+    }
+    .panel.is-open.is-closing .step::before{
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition-delay: calc(var(--rev) * 38ms);
+    }
+
+    /* Dock (Result) */
+    .dock{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding-left: calc(14px + var(--safe-left));
+      padding-right: calc(14px + var(--safe-right));
+      padding-bottom: calc(12px + var(--safe-bot));
+      padding-top: 10px;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    .dockCard{
+      pointer-events: auto;
+      border-radius: 22px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(255,255,255,.70);
+      outline: 1px solid var(--hair);
+      box-shadow: 0 26px 70px rgba(22,40,86,.16);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 12px 14px 12px;
+      overflow:hidden;
+      position: relative;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 720ms var(--ease), opacity 720ms var(--ease);
+    }
+    body.is-ready .dockCard{ transform: translateY(0); opacity: 1; transition-delay: 260ms; }
+
+    .dockCard::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(520px 240px at 18% 20%, rgba(255,255,255,.70), rgba(255,255,255,0) 62%),
+        radial-gradient(520px 260px at 86% 32%, rgba(255,255,255,.58), rgba(255,255,255,0) 64%);
+      opacity:.65;
+      pointer-events:none;
+    }
+    .dockCard > *{ position: relative; z-index: 1; }
+
+    .dockTop{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .dockLabel{
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(11,18,32,.56);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .dockMode{
+      font-size: 12px;
+      font-weight: 880;
+      letter-spacing: .01em;
+      color: rgba(11,18,32,.72);
+      white-space: nowrap;
+    }
+
+    .dockGpa{
+      font-size: 40px;
+      line-height: 1.0;
+      font-weight: 940;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      color: rgba(11,18,32,.92);
+    }
+    .dockDetail{
+      margin-top: 6px;
+      font-size: 12.5px;
+      line-height: 1.35;
+      color: rgba(11,18,32,.62);
+      letter-spacing: .01em;
+    }
+
+    /* Footer */
+    footer{
+      text-align:center;
+      color: rgba(11,18,32,.52);
+      font-size: 12px;
+      letter-spacing: .02em;
+      padding: 8px 0 2px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease);
+    }
+    body.is-ready footer{ transform: translateY(0); opacity: 1; transition-delay: 320ms; }
+
+    /* Switching */
+    body.is-switching .courseList,
+    body.is-switching .steps{
+      filter: saturate(1.02);
+    }
+
+    /* Keyframes */
+    @keyframes cardIn{
+      from{ transform: translateY(14px); opacity: 0; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+
+    /* Small phones */
+    @media (max-width: 360px){
+      .metric .v{ font-size: 17px; }
+      .dockGpa{ font-size: 38px; }
+      .stat{ min-width: 108px; }
+    }
+  </style>
+</head>
+
+<body data-mode="weighted">
+  <div class="screen" role="application" aria-label="GPA Calculator Mobile">
+    <header class="header glass" aria-label="顶部区域">
+      <div class="titleRow">
+        <h1 class="title">GPA Calculator</h1>
+      </div>
+      <p class="subtitle">Weighted / Unweighted · iOS 风格移动端专属体验</p>
+
+      <div class="seg" role="tablist" aria-label="模式切换">
+        <div class="pill" aria-hidden="true"></div>
+        <button type="button" data-mode="weighted" role="tab" aria-selected="true">Weighted</button>
+        <button type="button" data-mode="unweighted" role="tab" aria-selected="false">Unweighted</button>
+      </div>
+    </header>
+
+    <section class="metrics" aria-label="关键指标">
+      <div class="metric" aria-label="当前模式">
+        <div class="k">当前模式</div>
+        <div class="v" id="modeName">Weighted</div>
+      </div>
+      <div class="metric" aria-label="总权重或学分">
+        <div class="k" id="unitsLabel">总权重 / 学分</div>
+        <div class="v" id="totalUnits">32</div>
+      </div>
+      <div class="metric" aria-label="Cumulative GPA">
+        <div class="k">Cumulative GPA</div>
+        <div class="v" id="gpaVal">3.10</div>
+      </div>
+    </section>
+
+    <div class="sectionTitle" aria-label="课程区域标题">
+      <h2>课程明细</h2>
+      <p class="hint">左右滑动查看更多指标</p>
+    </div>
+
+    <section class="courseList" id="courseList" aria-label="课程卡片列表"></section>
+
+    <section class="steps" aria-label="计算步骤">
+      <article class="panel" id="mulPanel" aria-label="乘法步骤面板">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <h3>乘法步骤</h3>
+            <span class="line" aria-hidden="true"></span>
+          </div>
+          <button class="panelBtn" id="mulToggle" type="button" aria-expanded="false" aria-controls="mulBody">
+            <span id="mulToggleText">展开 0 步</span>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="panelBody" id="mulBody" role="region" aria-label="乘法步骤内容">
+          <div class="timeline" id="mulSteps"></div>
+        </div>
+      </article>
+
+      <article class="panel" id="addPanel" aria-label="加法步骤面板">
+        <div class="panelHead">
+          <div class="panelTitle">
+            <h3>加法步骤</h3>
+            <span class="line" aria-hidden="true"></span>
+          </div>
+          <button class="panelBtn" id="addToggle" type="button" aria-expanded="false" aria-controls="addBody">
+            <span id="addToggleText">展开 0 步</span>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="panelBody" id="addBody" role="region" aria-label="加法步骤内容">
+          <div class="timeline" id="addSteps"></div>
+        </div>
+      </article>
+    </section>
+
+    <footer aria-label="页脚">GPA Calculator · Designed with ♡</footer>
+  </div>
+
+  <div class="dock" aria-label="底部结果区域">
+    <div class="dockCard" id="dockCard" role="status" aria-live="polite">
+      <div class="dockTop">
+        <div class="dockLabel" id="sumTitle">Weighted Result</div>
+        <div class="dockMode" id="sumMode">Weighted</div>
+      </div>
+      <div class="dockGpa" id="sumGpa">3.10</div>
+      <div class="dockDetail" id="sumDetail">总分: 99.28 ÷ 总权重: 32</div>
+    </div>
+  </div>
+
+  <script>
+    const courses = [
+      ["EAP 英语", 89.68, 3.33, 4],
+      ["Literature 文学", 86.41, 3.00, 4],
+      ["Chinese 语文", 97.02, 4.33, 2],
+      ["Microeconomics 经济", 84.99, 3.00, 4],
+      ["Physics 1 物理", 79.74, 2.33, 4],
+      ["Pre Finance 金融", 85.86, 3.00, 4],
+      ["Calculus AB 微积分", 78.98, 2.33, 4],
+      ["Drama 戏剧", 87.05, 3.33, 2],
+      ["Seminar", 94.17, 4.00, 4]
+    ];
+
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const modeName = document.getElementById('modeName');
+    const totalUnits = document.getElementById('totalUnits');
+    const gpaVal = document.getElementById('gpaVal');
+    const unitsLabel = document.getElementById('unitsLabel');
+
+    const courseList = document.getElementById('courseList');
+
+    const mulPanel = document.getElementById('mulPanel');
+    const addPanel = document.getElementById('addPanel');
+    const mulBody = document.getElementById('mulBody');
+    const addBody = document.getElementById('addBody');
+    const mulToggle = document.getElementById('mulToggle');
+    const addToggle = document.getElementById('addToggle');
+    const mulToggleText = document.getElementById('mulToggleText');
+    const addToggleText = document.getElementById('addToggleText');
+    const mulSteps = document.getElementById('mulSteps');
+    const addSteps = document.getElementById('addSteps');
+
+    const sumTitle = document.getElementById('sumTitle');
+    const sumMode = document.getElementById('sumMode');
+    const sumGpa = document.getElementById('sumGpa');
+    const sumDetail = document.getElementById('sumDetail');
+    const dockCard = document.getElementById('dockCard');
+
+    let openState = { mul: false, add: false };
+    let currentMode = 'weighted';
+
+    function n(v){ return Number(v).toFixed(2); }
+
+    function setTabState(mode){
+      document.querySelectorAll('.seg button').forEach(btn => {
+        btn.setAttribute('aria-selected', btn.dataset.mode === mode ? 'true' : 'false');
+      });
+    }
+
+    function animateNumber(el, to, decimals = 2, duration = 620){
+      if (prefersReduced){
+        el.textContent = Number(to).toFixed(decimals);
+        return;
+      }
+      const fromText = (el.textContent || '').trim();
+      const from = Number(fromText);
+      const start = Number.isFinite(from) ? from : 0;
+      const end = Number(to);
+
+      if (!Number.isFinite(end)){
+        el.textContent = String(to);
+        return;
+      }
+
+      const t0 = performance.now();
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+
+      function frame(now){
+        const p = Math.min(1, (now - t0) / duration);
+        const v = start + (end - start) * ease(p);
+        el.textContent = v.toFixed(decimals);
+        if (p < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function pulseDock(){
+      if (prefersReduced) return;
+      dockCard.animate(
+        [
+          { transform: 'translateY(0) scale(1)', filter: 'saturate(1) brightness(1)' },
+          { transform: 'translateY(-1px) scale(1.01)', filter: 'saturate(1.06) brightness(1.02)' },
+          { transform: 'translateY(0) scale(1)', filter: 'saturate(1) brightness(1)' }
+        ],
+        { duration: 760, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
+    }
+
+    function setToggleLabel(which, count, isOpen){
+      const text = (isOpen ? '收起' : '展开') + ` ${count} 步`;
+      if (which === 'mul') mulToggleText.textContent = text;
+      if (which === 'add') addToggleText.textContent = text;
+    }
+
+    function setPanelExpanded(panelEl, bodyEl, btnEl, isOpen, immediate = false){
+      if (panelEl._animCleanup) panelEl._animCleanup();
+      panelEl._animCleanup = null;
+
+      btnEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+      if (prefersReduced || immediate){
+        panelEl.classList.toggle('is-open', isOpen);
+        panelEl.classList.remove('is-closing');
+        bodyEl.style.height = isOpen ? 'auto' : '0px';
+        return;
+      }
+
+      const cleanup = () => {
+        bodyEl.removeEventListener('transitionend', onEnd);
+        panelEl._animCleanup = null;
+      };
+
+      const onEnd = (e) => {
+        if (e.target !== bodyEl) return;
+        if (isOpen){
+          bodyEl.style.height = 'auto';
+        }else{
+          panelEl.classList.remove('is-open');
+          panelEl.classList.remove('is-closing');
+          bodyEl.style.height = '0px';
+        }
+        cleanup();
+      };
+
+      bodyEl.addEventListener('transitionend', onEnd);
+      panelEl._animCleanup = cleanup;
+
+      if (isOpen){
+        panelEl.classList.remove('is-closing');
+        panelEl.classList.add('is-open');
+        bodyEl.style.height = '0px';
+        requestAnimationFrame(() => {
+          const h = bodyEl.scrollHeight;
+          bodyEl.style.height = h + 'px';
+        });
+      }else{
+        panelEl.classList.add('is-closing');
+        const h = bodyEl.scrollHeight;
+        bodyEl.style.height = h + 'px';
+        requestAnimationFrame(() => {
+          bodyEl.style.height = '0px';
+        });
+      }
+    }
+
+    function syncOpenPanelHeights(){
+      if (prefersReduced) return;
+      if (openState.mul){
+        mulBody.style.height = 'auto';
+        const h = mulBody.scrollHeight;
+        mulBody.style.height = h + 'px';
+      }
+      if (openState.add){
+        addBody.style.height = 'auto';
+        const h = addBody.scrollHeight;
+        addBody.style.height = h + 'px';
+      }
+    }
+
+    function updateCourseCardFades(cardEl){
+      const sc = cardEl.querySelector('.statsScroller');
+      if (!sc) return;
+
+      const canScroll = sc.scrollWidth > sc.clientWidth + 2;
+      const scrolled = sc.scrollLeft > 2;
+      const atEnd = sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 2;
+
+      cardEl.dataset.canScroll = (canScroll && !atEnd) ? "1" : "0";
+      cardEl.dataset.scrolled = scrolled ? "1" : "0";
+    }
+
+    function buildCourseCard({ idx, name, score, gpa, unit, contrib, changed, weighted }){
+      const card = document.createElement('div');
+      card.className = 'courseCard';
+      card.style.animationDelay = `${0.06 + idx * 0.06}s`;
+
+      const badgeCls = changed ? 'badge changed' : 'badge';
+      const badgeText = weighted ? '权重' : '学分';
+      const badge = `<span class="${badgeCls}" aria-label="${badgeText} ${unit}"><span>${badgeText}</span><strong>${unit}</strong></span>`;
+
+      card.innerHTML = `
+        <div class="courseTop">
+          <p class="courseName">${name}</p>
+          ${badge}
+        </div>
+        <div class="statsWrap" aria-label="课程指标（可左右滑动）">
+          <div class="statsScroller">
+            <div class="stat"><div class="k">Score</div><div class="v">${n(score)}</div></div>
+            <div class="stat tint"><div class="k">GPA</div><div class="v">${n(gpa)}</div></div>
+            <div class="stat"><div class="k">${weighted ? 'Weight' : 'Unit'}</div><div class="v">${unit}</div></div>
+            <div class="stat"><div class="k">Contribution</div><div class="v">${n(contrib)}</div></div>
+          </div>
+        </div>
+      `;
+
+      const scroller = card.querySelector('.statsScroller');
+      const onScroll = () => updateCourseCardFades(card);
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+
+      requestAnimationFrame(() => updateCourseCardFades(card));
+
+      return card;
+    }
+
+    function render(mode = 'weighted'){
+      const weighted = mode === 'weighted';
+      currentMode = mode;
+
+      document.body.dataset.mode = mode;
+      setTabState(mode);
+
+      if (!prefersReduced){
+        document.body.classList.add('is-switching');
+        setTimeout(() => document.body.classList.remove('is-switching'), 420);
+      }
+
+      const units = courses.map(c => (weighted ? c[3] : 1));
+      const contrib = courses.map((c, i) => c[2] * units[i]);
+      const sumContrib = contrib.reduce((a, b) => a + b, 0);
+      const sumUnits = units.reduce((a, b) => a + b, 0);
+      const gpa = sumContrib / sumUnits;
+
+      modeName.textContent = weighted ? 'Weighted' : 'Unweighted';
+      unitsLabel.textContent = weighted ? '总权重 / 学分' : '总学分（全=1）';
+
+      animateNumber(totalUnits, sumUnits, 0, 520);
+      animateNumber(gpaVal, gpa, 2, 720);
+      animateNumber(sumGpa, gpa, 2, 820);
+
+      sumTitle.textContent = weighted ? 'Weighted Result' : 'Unweighted Result';
+      sumMode.textContent = weighted ? 'Weighted' : 'Unweighted';
+      sumDetail.textContent = `总分: ${n(sumContrib)} ÷ 总${weighted ? '权重' : '学分'}: ${sumUnits}`;
+
+      // Course cards
+      courseList.innerHTML = '';
+      courses.forEach((c, idx) => {
+        const changed = weighted && (idx === 2 || idx === 7);
+        const card = buildCourseCard({
+          idx,
+          name: c[0],
+          score: c[1],
+          gpa: c[2],
+          unit: units[idx],
+          contrib: contrib[idx],
+          changed,
+          weighted
+        });
+        courseList.appendChild(card);
+      });
+
+      // Steps
+      mulSteps.innerHTML = '';
+      addSteps.innerHTML = '';
+
+      courses.forEach((c, idx) => {
+        const el = document.createElement('div');
+        el.className = 'step mul';
+        el.style.setProperty('--i', idx);
+        el.innerHTML = `${idx + 1}. ${n(c[2])} × ${units[idx]} = ${n(contrib[idx])}`;
+        mulSteps.appendChild(el);
+      });
+
+      let partial = 0;
+      contrib.forEach((v, idx) => {
+        const el = document.createElement('div');
+        el.className = 'step add';
+        el.style.setProperty('--i', idx);
+        el.innerHTML = `${idx + 1}. ${n(partial)} + ${n(v)} = ${n(partial + v)}`;
+        partial += v;
+        addSteps.appendChild(el);
+      });
+
+      const mulCount = mulSteps.children.length;
+      const addCount = addSteps.children.length;
+
+      [...mulSteps.children].forEach((el, i) => el.style.setProperty('--rev', (mulCount - i - 1)));
+      [...addSteps.children].forEach((el, i) => el.style.setProperty('--rev', (addCount - i - 1)));
+
+      setToggleLabel('mul', mulCount, openState.mul);
+      setToggleLabel('add', addCount, openState.add);
+
+      // Preserve open state across renders; default collapsed
+      setPanelExpanded(mulPanel, mulBody, mulToggle, openState.mul, true);
+      setPanelExpanded(addPanel, addBody, addToggle, openState.add, true);
+
+      requestAnimationFrame(() => {
+        syncOpenPanelHeights();
+        document.querySelectorAll('.courseCard').forEach(updateCourseCardFades);
+      });
+
+      pulseDock();
+    }
+
+    mulToggle.addEventListener('click', () => {
+      openState.mul = !openState.mul;
+      setToggleLabel('mul', mulSteps.children.length, openState.mul);
+      setPanelExpanded(mulPanel, mulBody, mulToggle, openState.mul);
+    });
+
+    addToggle.addEventListener('click', () => {
+      openState.add = !openState.add;
+      setToggleLabel('add', addSteps.children.length, openState.add);
+      setPanelExpanded(addPanel, addBody, addToggle, openState.add);
+    });
+
+    document.querySelectorAll('.seg button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === currentMode) return;
+        render(mode);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      syncOpenPanelHeights();
+      document.querySelectorAll('.courseCard').forEach(updateCourseCardFades);
+    }, { passive: true });
+
+    requestAnimationFrame(() => {
+      document.body.classList.add('is-ready');
+      render('weighted');
+    });
+  </script>
+</body>
+</html>
