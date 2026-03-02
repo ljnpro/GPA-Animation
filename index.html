@@ -1,113 +1,847 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>GPA 动态计算演示</title>
-<style>
-    body {
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px;
-    }
-    .card {
-        background: rgba(255, 255, 255, 0.95);
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        width: 100%;
-        max-width: 850px;
-    }
-    h2 { text-align: center; color: #333; margin-bottom: 30px; letter-spacing: 1px;}
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
-    th { background-color: #f8f9fa; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 8px 8px 0 0;}
-    
-    /* 逐行滑入动画 */
-    tr.data-row { opacity: 0; transform: translateX(-30px); animation: slideIn 0.5s ease-out forwards; }
-    
-    /* 严格的时间线控制：逐行显示 */
-    tr:nth-child(1) { animation-delay: 0.2s; }
-    tr:nth-child(2) { animation-delay: 0.5s; }
-    tr:nth-child(3) { animation-delay: 0.8s; }
-    tr:nth-child(4) { animation-delay: 1.1s; }
-    tr:nth-child(5) { animation-delay: 1.4s; }
-    tr:nth-child(6) { animation-delay: 1.7s; }
-    tr:nth-child(7) { animation-delay: 2.0s; }
-    tr:nth-child(8) { animation-delay: 2.3s; }
-    tr:nth-child(9) { animation-delay: 2.6s; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>GPA 双模式动态演示</title>
+  <style>
+    :root{
+      --bg0:#ffffff;
+      --bg1:#f6f8ff;
+      --bg2:#eef3ff;
 
-    /* 修改权重的特效 */
-    .changed-weight {
-        color: #ff4757;
-        font-weight: 800;
-        font-size: 1.3em;
-        display: inline-block;
-        opacity: 0;
-        animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, glow 2s infinite;
-    }
-    /* 确保权重数字在行出现后才掉落 */
-    tr:nth-child(3) .changed-weight { animation-delay: 1.0s, 1.5s; }
-    tr:nth-child(8) .changed-weight { animation-delay: 2.5s, 3.0s; }
+      --card: rgba(255,255,255,.72);
+      --card-strong: rgba(255,255,255,.84);
+      --stroke: rgba(120, 140, 180, .18);
+      --stroke-strong: rgba(120, 140, 180, .26);
 
-    /* 最终结果弹框特效 */
-    .summary-box {
-        margin-top: 35px;
-        padding: 25px;
-        background: linear-gradient(135deg, #00b09b, #96c93d);
-        color: white;
-        text-align: center;
-        border-radius: 15px;
-        font-size: 32px;
-        font-weight: 800;
-        box-shadow: 0 15px 25px rgba(0, 176, 155, 0.3);
-        opacity: 0;
-        transform: scale(0.5);
-        animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 3.5s forwards;
-    }
-    .details { font-size: 16px; font-weight: normal; margin-bottom: 8px; opacity: 0.9; text-shadow: none;}
+      --text: #1f2a44;
+      --muted: rgba(31, 42, 68, .62);
 
-    /* 动画关键帧定义 */
-    @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
-    @keyframes dropIn { 0% { opacity: 0; transform: translateY(-20px) scale(2); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-    @keyframes popUp { to { opacity: 1; transform: scale(1); } }
-    @keyframes glow { 0% { text-shadow: 0 0 5px rgba(255,71,87,0.2); } 50% { text-shadow: 0 0 15px rgba(255,71,87,0.6); } 100% { text-shadow: 0 0 5px rgba(255,71,87,0.2); } }
-</style>
+      --shadow: 0 24px 70px rgba(30, 55, 110, .14);
+      --shadow-soft: 0 10px 30px rgba(30, 55, 110, .10);
+
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+
+      --blur: 16px;
+
+      --ease: cubic-bezier(.22,1,.36,1);
+      --ease-soft: cubic-bezier(.2,.9,.2,1);
+      --ease-spring: cubic-bezier(.175,.885,.32,1.275);
+
+      --space-1: 6px;
+      --space-2: 10px;
+      --space-3: 14px;
+      --space-4: 18px;
+      --space-5: 24px;
+      --space-6: 30px;
+
+      --maxw: 1120px;
+
+      --tint: #7c9bff;          /* weighted default */
+      --tint-2: #9fe4d4;
+      --tint-soft: rgba(124,155,255,.16);
+      --tint-soft-2: rgba(159,228,212,.16);
+      --focus: rgba(124,155,255,.34);
+
+      --grad-hero: radial-gradient(900px 460px at 18% 8%, rgba(124,155,255,.18), rgba(255,255,255,0) 60%),
+                   radial-gradient(800px 420px at 86% 12%, rgba(159,228,212,.18), rgba(255,255,255,0) 62%),
+                   linear-gradient(160deg, var(--bg1), var(--bg2));
+      --grad-chip: linear-gradient(135deg, rgba(124,155,255,.42), rgba(159,228,212,.40));
+      --grad-summary: linear-gradient(140deg, rgba(124,155,255,.12), rgba(159,228,212,.14));
+    }
+
+    body[data-mode="unweighted"]{
+      --tint:#7ee0c7;
+      --tint-2:#8fb2ff;
+      --tint-soft: rgba(126,224,199,.16);
+      --tint-soft-2: rgba(143,178,255,.14);
+      --focus: rgba(126,224,199,.34);
+
+      --grad-hero: radial-gradient(900px 460px at 18% 8%, rgba(126,224,199,.18), rgba(255,255,255,0) 60%),
+                   radial-gradient(800px 420px at 86% 12%, rgba(143,178,255,.18), rgba(255,255,255,0) 62%),
+                   linear-gradient(160deg, var(--bg1), var(--bg2));
+      --grad-chip: linear-gradient(135deg, rgba(126,224,199,.42), rgba(143,178,255,.38));
+      --grad-summary: linear-gradient(140deg, rgba(126,224,199,.14), rgba(143,178,255,.10));
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: var(--grad-hero);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue",
+                   "PingFang SC","Microsoft YaHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: clamp(10px, 2.4vw, 22px);
+      transition: background 520ms var(--ease);
+      overflow-x:hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *, *::before, *::after{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    }
+
+    .shell{
+      width: min(var(--maxw), 100%);
+      display:grid;
+      gap: var(--space-4);
+    }
+
+    .app{
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.55);
+      outline: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      padding: clamp(14px, 3.2vw, 30px);
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 520ms var(--ease), opacity 520ms var(--ease), background 520ms var(--ease), outline-color 520ms var(--ease);
+      will-change: transform, opacity;
+    }
+
+    body.is-ready .app{
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-3);
+    }
+
+    .title-wrap{
+      display:grid;
+      gap: 8px;
+      min-width: min(520px, 100%);
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(24px, 3.6vw, 40px);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      font-weight: 800;
+    }
+
+    .subtitle{
+      margin:0;
+      color: var(--muted);
+      font-size: clamp(13px, 1.4vw, 15px);
+      line-height: 1.6;
+      letter-spacing: .01em;
+    }
+
+    /* Switch */
+    .switch{
+      position:relative;
+      display:inline-grid;
+      grid-template-columns: 1fr 1fr;
+      align-items:center;
+      gap: 0;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.56);
+      border: 1px solid rgba(120,140,180,.22);
+      outline: 1px solid rgba(255,255,255,.45);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      min-width: 252px;
+      max-width: 360px;
+      overflow:hidden;
+      transform: translateY(8px);
+      opacity: 0;
+      transition: transform 520ms var(--ease), opacity 520ms var(--ease), background 520ms var(--ease);
+    }
+
+    body.is-ready .switch{
+      transform: translateY(0);
+      opacity: 1;
+      transition-delay: 60ms;
+    }
+
+    .switch .indicator{
+      position:absolute;
+      inset: 4px auto 4px 4px;
+      width: calc(50% - 4px);
+      border-radius: 999px;
+      background: var(--grad-chip);
+      box-shadow: 0 14px 34px rgba(124,155,255,.22);
+      transform: translateX(0);
+      transition: transform 560ms var(--ease), box-shadow 520ms var(--ease), filter 520ms var(--ease);
+      filter: saturate(1.02);
+      will-change: transform;
+    }
+
+    body[data-mode="unweighted"] .switch .indicator{
+      transform: translateX(100%);
+      box-shadow: 0 14px 34px rgba(126,224,199,.22);
+    }
+
+    .switch button{
+      position:relative;
+      z-index:1;
+      border:none;
+      background:transparent;
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor:pointer;
+      font-weight: 700;
+      letter-spacing: .01em;
+      color: rgba(31,42,68,.72);
+      transition: color 260ms var(--ease), transform 260ms var(--ease), opacity 260ms var(--ease);
+      min-height: 40px;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .switch button:hover{ transform: translateY(-1px); color: rgba(31,42,68,.86); }
+    .switch button:active{ transform: translateY(0); opacity: .86; }
+    .switch button:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+
+    body[data-mode="weighted"] .switch button[data-mode="weighted"],
+    body[data-mode="unweighted"] .switch button[data-mode="unweighted"]{
+      color: rgba(255,255,255,.96);
+      text-shadow: 0 1px 18px rgba(20,30,60,.20);
+    }
+
+    /* Metrics */
+    .metrics{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: var(--space-4) 0 var(--space-4);
+    }
+
+    .metric{
+      background: var(--card-strong);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,.55);
+      outline: 1px solid var(--stroke);
+      box-shadow: 0 10px 26px rgba(30,55,110,.08);
+      padding: 14px 14px 12px;
+      display:grid;
+      gap: 6px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 520ms var(--ease), opacity 520ms var(--ease), background 520ms var(--ease), outline-color 520ms var(--ease);
+      will-change: transform, opacity;
+    }
+
+    body.is-ready .metric{
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    body.is-ready .metric:nth-child(1){ transition-delay: 80ms; }
+    body.is-ready .metric:nth-child(2){ transition-delay: 140ms; }
+    body.is-ready .metric:nth-child(3){ transition-delay: 200ms; }
+
+    .metric:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 18px 46px rgba(30,55,110,.12);
+    }
+
+    .metric .label{
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .02em;
+    }
+    .metric .value{
+      font-size: clamp(22px, 3.2vw, 34px);
+      line-height: 1.1;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
+
+    /* Table */
+    .table-wrap{
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,.58);
+      border: 1px solid rgba(255,255,255,.55);
+      outline: 1px solid var(--stroke);
+      box-shadow: 0 12px 34px rgba(30,55,110,.08);
+      overflow: hidden;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 520ms var(--ease), opacity 520ms var(--ease), background 520ms var(--ease);
+    }
+
+    body.is-ready .table-wrap{
+      transform: translateY(0);
+      opacity: 1;
+      transition-delay: 240ms;
+    }
+
+    .table-scroll{
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable both-edges;
+      position: relative;
+    }
+
+    /* subtle edge fades for horizontal scroll */
+    .table-scroll::before,
+    .table-scroll::after{
+      content:"";
+      position:absolute;
+      top:0; bottom:0;
+      width: 26px;
+      pointer-events:none;
+      opacity: 0;
+      transition: opacity 220ms var(--ease);
+      z-index: 2;
+    }
+    .table-scroll::before{
+      left:0;
+      background: linear-gradient(90deg, rgba(245,248,255,.95), rgba(245,248,255,0));
+    }
+    .table-scroll::after{
+      right:0;
+      background: linear-gradient(270deg, rgba(245,248,255,.95), rgba(245,248,255,0));
+    }
+    .table-scroll[data-can-scroll="1"]::after{ opacity: 1; }
+    .table-scroll[data-scrolled="1"]::before{ opacity: 1; }
+
+    table{
+      width:100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-align:center;
+      padding: 12px 10px;
+      font-size: 12px;
+      color: rgba(31,42,68,.62);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(120,140,180,.18);
+    }
+
+    tbody td{
+      text-align:center;
+      padding: 12px 10px;
+      font-size: 14px;
+      color: rgba(31,42,68,.88);
+      border-bottom: 1px solid rgba(120,140,180,.12);
+      transition: background 220ms var(--ease), transform 220ms var(--ease);
+      background: transparent;
+    }
+
+    tbody tr:nth-child(odd) td{
+      background: rgba(255,255,255,.42);
+    }
+
+    tbody tr{
+      transform: translateX(-10px);
+      opacity: 0;
+      animation: rowIn 520ms var(--ease) forwards;
+      will-change: transform, opacity;
+    }
+
+    tbody tr:hover td{
+      background: rgba(124,155,255,.10);
+    }
+    body[data-mode="unweighted"] tbody tr:hover td{
+      background: rgba(126,224,199,.10);
+    }
+    tbody tr:hover td:first-child{
+      border-left: 2px solid rgba(124,155,255,.45);
+    }
+    body[data-mode="unweighted"] tbody tr:hover td:first-child{
+      border-left: 2px solid rgba(126,224,199,.45);
+    }
+
+    .changed{
+      color: #ff5a7b;
+      font-weight: 800;
+      display:inline-block;
+      animation: popIn 560ms var(--ease-spring);
+      text-shadow: 0 10px 26px rgba(255,90,123,.18);
+    }
+
+    /* Panels */
+    .grid{
+      margin-top: var(--space-4);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .panel{
+      background: rgba(255,255,255,.58);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,.55);
+      outline: 1px solid var(--stroke);
+      box-shadow: 0 12px 34px rgba(30,55,110,.08);
+      padding: 14px;
+      min-height: 160px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform 520ms var(--ease), opacity 520ms var(--ease), background 520ms var(--ease);
+    }
+
+    body.is-ready .panel{
+      transform: translateY(0);
+      opacity: 1;
+    }
+    body.is-ready .panel:nth-child(1){ transition-delay: 300ms; }
+    body.is-ready .panel:nth-child(2){ transition-delay: 360ms; }
+
+    .panel:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 18px 48px rgba(30,55,110,.12);
+    }
+
+    .panel h3{
+      margin: 2px 0 10px;
+      font-size: 14px;
+      letter-spacing: .02em;
+      color: rgba(31,42,68,.78);
+      font-weight: 800;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+
+    .panel h3::after{
+      content:"";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, rgba(120,140,180,.0), rgba(120,140,180,.22), rgba(120,140,180,.0));
+      opacity: .9;
+    }
+
+    .steps{
+      display:grid;
+      gap: 8px;
+    }
+
+    .step{
+      font-size: 13px;
+      line-height: 1.55;
+      color: rgba(31,42,68,.86);
+      padding: 9px 10px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,.60);
+      border: 1px solid rgba(120,140,180,.14);
+      box-shadow: 0 6px 18px rgba(30,55,110,.06);
+      border-left: 3px solid rgba(124,155,255,.8);
+      opacity: 0;
+      transform: translateY(8px);
+      animation: stepIn 520ms var(--ease) forwards;
+      transition: transform 220ms var(--ease), background 220ms var(--ease), border-color 220ms var(--ease), box-shadow 220ms var(--ease);
+      will-change: transform, opacity;
+    }
+
+    .step.add{
+      border-left-color: rgba(159,228,212,.9);
+    }
+    body[data-mode="unweighted"] .step{ border-left-color: rgba(126,224,199,.85); }
+    body[data-mode="unweighted"] .step.add{ border-left-color: rgba(143,178,255,.75); }
+
+    .step:hover{
+      transform: translateY(6px);
+      background: rgba(124,155,255,.08);
+      border-color: rgba(124,155,255,.22);
+      box-shadow: 0 12px 30px rgba(30,55,110,.10);
+    }
+    body[data-mode="unweighted"] .step:hover{
+      background: rgba(126,224,199,.08);
+      border-color: rgba(126,224,199,.22);
+    }
+
+    /* Summary */
+    .summary{
+      margin-top: var(--space-4);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,.65);
+      outline: 1px solid rgba(120,140,180,.20);
+      background: var(--grad-summary);
+      box-shadow: 0 18px 54px rgba(30,55,110,.12);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: clamp(14px, 2.6vw, 22px);
+      text-align: center;
+      position: relative;
+      overflow:hidden;
+
+      transform: translateY(12px) scale(.98);
+      opacity: 0;
+      transition: transform 680ms var(--ease), opacity 680ms var(--ease), background 520ms var(--ease);
+    }
+
+    body.is-ready .summary{
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      transition-delay: 420ms;
+    }
+
+    .summary::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(600px 220px at 20% 20%, rgba(255,255,255,.65), rgba(255,255,255,0) 60%),
+        radial-gradient(600px 240px at 85% 35%, rgba(255,255,255,.50), rgba(255,255,255,0) 62%);
+      opacity:.7;
+      pointer-events:none;
+    }
+
+    .summary > *{ position: relative; z-index: 1; }
+
+    .summary .title{
+      color: rgba(31,42,68,.62);
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .summary .gpa{
+      margin-top: 8px;
+      font-size: clamp(30px, 4.6vw, 52px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.04;
+      color: rgba(31,42,68,.92);
+    }
+
+    .summary .detail{
+      margin-top: 8px;
+      color: rgba(31,42,68,.62);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    footer{
+      text-align:center;
+      color: rgba(31,42,68,.58);
+      font-size: 12px;
+      letter-spacing: .02em;
+      padding: 8px 0 2px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+    }
+    body.is-ready footer{
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 520ms;
+    }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .metrics{ grid-template-columns: 1fr; }
+      .grid{ grid-template-columns: 1fr; }
+      table{ min-width: 720px; }
+    }
+
+    @media (max-width: 620px){
+      .app{ border-radius: 22px; }
+      .switch{ min-width: 220px; }
+      .switch button{ padding: 10px 12px; font-size: 12px; }
+      tbody td{ font-size: 13px; padding: 11px 8px; }
+      thead th{ padding: 11px 8px; font-size: 11px; }
+      .panel{ padding: 12px; }
+      .step{ font-size: 12.5px; }
+    }
+
+    @media (min-width: 1400px){
+      :root{ --maxw: 1220px; }
+    }
+
+    /* Keyframes */
+    @keyframes rowIn{
+      to{ opacity:1; transform: translateX(0); }
+    }
+    @keyframes stepIn{
+      to{ opacity:1; transform: translateY(0); }
+    }
+    @keyframes popIn{
+      from{ transform: scale(1.25); opacity: .2; }
+      to{ transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
-<body>
-    <div class="card">
-        <h2>🎓 GPA 加权计算演示 (全新权重)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>课程名称</th>
-                    <th>成绩分数</th>
-                    <th>对应 GPA</th>
-                    <th>课程权重</th>
-                    <th>加权得分</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="data-row"><td>EAP 英语</td><td>89.68</td><td>3.33</td><td>4</td><td>13.32</td></tr>
-                <tr class="data-row"><td>Literature 文学</td><td>86.41</td><td>3.00</td><td>4</td><td>12.00</td></tr>
-                <tr class="data-row"><td>Chinese 语文</td><td>97.02</td><td>4.33</td><td><span class="changed-weight">2</span></td><td>8.66</td></tr>
-                <tr class="data-row"><td>Microeconomics 经济</td><td>84.99</td><td>3.00</td><td>4</td><td>12.00</td></tr>
-                <tr class="data-row"><td>Physics 1 物理</td><td>79.74</td><td>2.33</td><td>4</td><td>9.32</td></tr>
-                <tr class="data-row"><td>Pre Finance 金融</td><td>85.86</td><td>3.00</td><td>4</td><td>12.00</td></tr>
-                <tr class="data-row"><td>Calculus AB 微积分</td><td>78.98</td><td>2.33</td><td>4</td><td>9.32</td></tr>
-                <tr class="data-row"><td>Drama 戏剧</td><td>87.05</td><td>3.33</td><td><span class="changed-weight">2</span></td><td>6.66</td></tr>
-                <tr class="data-row"><td>Seminar</td><td>94.17</td><td>4.00</td><td>4</td><td>16.00</td></tr>
-            </tbody>
-        </table>
-        
-        <div class="summary-box">
-            <div class="details">总加权得分: 99.28 ÷ 总学分权重: 32</div>
-            ✨ Cumulative GPA: 3.10 ✨
+<body data-mode="weighted">
+  <div class="shell" role="application" aria-label="GPA Calculator">
+    <main class="app" id="app">
+      <header class="topbar">
+        <div class="title-wrap">
+          <h1>GPA 双模式计算</h1>
+          <p class="subtitle">极简淡色 · Weighted / Unweighted 可视化演示（毛玻璃、丝滑动画与微交互）</p>
         </div>
-    </div>
+
+        <div class="switch" aria-label="模式切换" role="tablist">
+          <div class="indicator" aria-hidden="true"></div>
+          <button data-mode="weighted" role="tab" aria-selected="true" type="button">Weighted</button>
+          <button data-mode="unweighted" role="tab" aria-selected="false" type="button">Unweighted</button>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="关键指标">
+        <div class="metric">
+          <div class="label">当前模式</div>
+          <div class="value" id="modeName">Weighted</div>
+        </div>
+        <div class="metric">
+          <div class="label">总权重 / 学分</div>
+          <div class="value" id="totalUnits">32</div>
+        </div>
+        <div class="metric">
+          <div class="label">Cumulative GPA</div>
+          <div class="value" id="gpaVal">3.10</div>
+        </div>
+      </section>
+
+      <section class="table-wrap" aria-label="课程表格">
+        <div class="table-scroll" id="tableScroll">
+          <table aria-label="课程成绩与 GPA 明细">
+            <thead>
+              <tr>
+                <th>课程名称</th>
+                <th>成绩分数</th>
+                <th>对应 GPA</th>
+                <th id="unitsHeader">课程权重</th>
+                <th id="contribHeader">加权得分</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid" aria-label="计算步骤">
+        <article class="panel">
+          <h3 id="mulTitle">乘法步骤</h3>
+          <div class="steps" id="mulSteps"></div>
+        </article>
+        <article class="panel">
+          <h3 id="addTitle">加法步骤</h3>
+          <div class="steps" id="addSteps"></div>
+        </article>
+      </section>
+
+      <section class="summary" id="summary" aria-label="结果汇总">
+        <div class="title" id="sumTitle">Weighted 结果</div>
+        <div class="gpa" id="sumGpa">3.10</div>
+        <div class="detail" id="sumDetail">总分: 99.28 ÷ 总权重: 32</div>
+      </section>
+    </main>
+
+    <footer aria-label="页脚">GPA Calculator · Designed with ♡</footer>
+  </div>
+
+  <script>
+    const courses = [
+      ["EAP 英语", 89.68, 3.33, 4],
+      ["Literature 文学", 86.41, 3.00, 4],
+      ["Chinese 语文", 97.02, 4.33, 2],
+      ["Microeconomics 经济", 84.99, 3.00, 4],
+      ["Physics 1 物理", 79.74, 2.33, 4],
+      ["Pre Finance 金融", 85.86, 3.00, 4],
+      ["Calculus AB 微积分", 78.98, 2.33, 4],
+      ["Drama 戏剧", 87.05, 3.33, 2],
+      ["Seminar", 94.17, 4.00, 4]
+    ];
+
+    const rows = document.getElementById('rows');
+    const mulSteps = document.getElementById('mulSteps');
+    const addSteps = document.getElementById('addSteps');
+
+    const modeName = document.getElementById('modeName');
+    const totalUnits = document.getElementById('totalUnits');
+    const gpaVal = document.getElementById('gpaVal');
+    const unitsHeader = document.getElementById('unitsHeader');
+    const contribHeader = document.getElementById('contribHeader');
+    const sumTitle = document.getElementById('sumTitle');
+    const sumGpa = document.getElementById('sumGpa');
+    const sumDetail = document.getElementById('sumDetail');
+    const summary = document.getElementById('summary');
+
+    const app = document.getElementById('app');
+    const tableScroll = document.getElementById('tableScroll');
+
+    function n(v) { return Number(v).toFixed(2); }
+
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function setTabState(mode){
+      document.querySelectorAll('.switch button').forEach(btn => {
+        btn.setAttribute('aria-selected', btn.dataset.mode === mode ? 'true' : 'false');
+      });
+    }
+
+    function animateNumber(el, to, decimals = 2, duration = 620){
+      if (prefersReduced){
+        el.textContent = Number(to).toFixed(decimals);
+        return;
+      }
+      const fromText = (el.textContent || '').trim();
+      const from = Number(fromText);
+      const start = Number.isFinite(from) ? from : 0;
+      const end = Number(to);
+
+      if (!Number.isFinite(end)){
+        el.textContent = String(to);
+        return;
+      }
+
+      const t0 = performance.now();
+      const ease = (t) => 1 - Math.pow(1 - t, 3); // smooth out-cubic
+
+      function frame(now){
+        const p = Math.min(1, (now - t0) / duration);
+        const v = start + (end - start) * ease(p);
+        el.textContent = v.toFixed(decimals);
+        if (p < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function updateScrollFades(){
+      if (!tableScroll) return;
+      const canScroll = tableScroll.scrollWidth > tableScroll.clientWidth + 2;
+      const scrolled = tableScroll.scrollLeft > 2;
+      const atEnd = tableScroll.scrollLeft + tableScroll.clientWidth >= tableScroll.scrollWidth - 2;
+
+      tableScroll.dataset.canScroll = canScroll ? "1" : "0";
+      tableScroll.dataset.scrolled = scrolled ? "1" : "0";
+
+      if (canScroll && atEnd){
+        tableScroll.dataset.canScroll = "0";
+      }
+    }
+
+    function pulseSummary(){
+      if (prefersReduced) return;
+      summary.animate(
+        [
+          { transform: 'translateY(0) scale(1)', filter: 'saturate(1) brightness(1)' },
+          { transform: 'translateY(-1px) scale(1.01)', filter: 'saturate(1.05) brightness(1.02)' },
+          { transform: 'translateY(0) scale(1)', filter: 'saturate(1) brightness(1)' }
+        ],
+        { duration: 760, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
+    }
+
+    function render(mode = 'weighted') {
+      const weighted = mode === 'weighted';
+      document.body.dataset.mode = mode;
+      setTabState(mode);
+
+      if (!prefersReduced){
+        app.animate(
+          [
+            { opacity: 0.78, transform: 'translateY(6px)' },
+            { opacity: 1, transform: 'translateY(0)' }
+          ],
+          { duration: 520, easing: 'cubic-bezier(.22,1,.36,1)' }
+        );
+      }
+
+      const units = courses.map(c => (weighted ? c[3] : 1));
+      const contrib = courses.map((c, i) => c[2] * units[i]);
+      const sumContrib = contrib.reduce((a, b) => a + b, 0);
+      const sumUnits = units.reduce((a, b) => a + b, 0);
+      const gpa = sumContrib / sumUnits;
+
+      modeName.textContent = weighted ? 'Weighted' : 'Unweighted';
+
+      animateNumber(totalUnits, sumUnits, 0, 520);
+      animateNumber(gpaVal, gpa, 2, 720);
+      animateNumber(sumGpa, gpa, 2, 820);
+
+      unitsHeader.textContent = weighted ? '课程权重' : '课程学分(全=1)';
+      contribHeader.textContent = weighted ? '加权得分' : '课程贡献分';
+      sumTitle.textContent = weighted ? 'Weighted 结果' : 'Unweighted 结果';
+      sumDetail.textContent = `总分: ${n(sumContrib)} ÷ 总${weighted ? '权重' : '学分'}: ${sumUnits}`;
+
+      rows.innerHTML = '';
+      mulSteps.innerHTML = '';
+      addSteps.innerHTML = '';
+
+      courses.forEach((c, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = `${0.12 + idx * 0.07}s`;
+
+        const changed = weighted && (idx === 2 || idx === 7);
+        tr.innerHTML = `
+          <td>${c[0]}</td>
+          <td>${n(c[1])}</td>
+          <td>${n(c[2])}</td>
+          <td>${changed ? `<span class="changed">${units[idx]}</span>` : units[idx]}</td>
+          <td>${n(contrib[idx])}</td>
+        `;
+        rows.appendChild(tr);
+
+        const mul = document.createElement('div');
+        mul.className = 'step';
+        mul.style.animationDelay = `${0.55 + idx * 0.07}s`;
+        mul.textContent = `${idx + 1}. ${n(c[2])} × ${units[idx]} = ${n(contrib[idx])}`;
+        mulSteps.appendChild(mul);
+      });
+
+      let partial = 0;
+      contrib.forEach((v, idx) => {
+        const add = document.createElement('div');
+        add.className = 'step add';
+        add.style.animationDelay = `${1.22 + idx * 0.08}s`;
+        add.textContent = `${idx + 1}. ${n(partial)} + ${n(v)} = ${n(partial + v)}`;
+        partial += v;
+        addSteps.appendChild(add);
+      });
+
+      pulseSummary();
+
+      requestAnimationFrame(updateScrollFades);
+    }
+
+    document.querySelectorAll('.switch button').forEach(btn => {
+      btn.addEventListener('click', () => render(btn.dataset.mode));
+    });
+
+    if (tableScroll){
+      tableScroll.addEventListener('scroll', () => updateScrollFades(), { passive: true });
+      window.addEventListener('resize', () => updateScrollFades(), { passive: true });
+    }
+
+    // Elegant entrance
+    requestAnimationFrame(() => {
+      document.body.classList.add('is-ready');
+      render('weighted');
+      updateScrollFades();
+    });
+  </script>
 </body>
 </html>
