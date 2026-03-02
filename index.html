@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GPA 双模式动态演示</title>
+<style>
+  :root {
+    --bg1: #071225;
+    --bg2: #0f2745;
+    --bg3: #1f3f6d;
+    --glass: rgba(255, 255, 255, 0.1);
+    --text: #eaf3ff;
+    --muted: #a7bfdc;
+    --accent: #6ae3ff;
+    --accent2: #7ef7b8;
+    --danger: #ff7f97;
+    --card-border: rgba(255, 255, 255, 0.16);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 12% 18%, rgba(106, 227, 255, 0.22), transparent 35%),
+      radial-gradient(circle at 85% 12%, rgba(126, 247, 184, 0.14), transparent 30%),
+      radial-gradient(circle at 50% 100%, rgba(122, 140, 255, 0.24), transparent 45%),
+      linear-gradient(140deg, var(--bg1), var(--bg2) 45%, var(--bg3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    overflow-x: hidden;
+  }
+
+  .card {
+    width: min(1100px, 100%);
+    border-radius: 26px;
+    padding: clamp(18px, 3vw, 34px);
+    background: linear-gradient(140deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+    border: 1px solid var(--card-border);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.15);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .title-wrap h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 38px);
+    letter-spacing: 0.5px;
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: clamp(12px, 2.1vw, 15px);
+  }
+
+  .mode-switch {
+    position: relative;
+    display: inline-flex;
+    background: rgba(4, 14, 30, 0.65);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    padding: 5px;
+    gap: 5px;
+    isolation: isolate;
+  }
+
+  .slider {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: calc(50% - 5px);
+    height: calc(100% - 10px);
+    border-radius: 999px;
+    background: linear-gradient(120deg, rgba(106,227,255,0.95), rgba(126,247,184,0.95));
+    box-shadow: 0 8px 22px rgba(106,227,255,0.35);
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 0;
+  }
+
+  .mode-btn {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: color .25s ease, transform .25s ease;
+    font-size: 14px;
+  }
+
+  .mode-btn:hover { transform: translateY(-1px); }
+  body[data-mode="unweighted"] .slider { transform: translateX(100%); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 20px;
+  }
+
+  .stat {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+
+  .stat .label { color: var(--muted); font-size: 12px; }
+  .stat .value { margin-top: 6px; font-size: clamp(18px, 2.8vw, 30px); font-weight: 800; }
+
+  .table-shell {
+    overflow: auto;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+    background: rgba(1, 10, 24, 0.35);
+  }
+
+  th, td {
+    padding: 12px 14px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+  }
+
+  th {
+    color: #d5e7ff;
+    font-size: 13px;
+    letter-spacing: .4px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  tbody tr {
+    opacity: 0;
+    transform: translateX(-18px);
+    animation: rowIn 0.45s ease forwards;
+  }
+
+  .changed-weight {
+    color: var(--danger);
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255,127,151,.45);
+    animation: popWeight .7s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+
+  .calculation-wrap {
+    margin-top: 18px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 16px;
+    padding: 14px;
+    min-height: 220px;
+  }
+
+  .panel h3 { margin: 0 0 10px; font-size: 16px; }
+
+  .steps {
+    display: grid;
+    gap: 7px;
+  }
+
+  .step {
+    opacity: 0;
+    transform: translateY(8px);
+    padding: 7px 9px;
+    border-radius: 10px;
+    font-size: 13px;
+    background: rgba(0,0,0,0.22);
+    border-left: 3px solid var(--accent);
+    animation: stepIn .35s ease forwards;
+  }
+
+  .step.add { border-left-color: var(--accent2); }
+
+  .summary-box {
+    margin-top: 18px;
+    border-radius: 18px;
+    padding: 18px;
+    text-align: center;
+    background: linear-gradient(140deg, rgba(106,227,255,0.2), rgba(126,247,184,0.2));
+    border: 1px solid rgba(255,255,255,0.24);
+    box-shadow: 0 14px 30px rgba(0,0,0,.24);
+    opacity: 0;
+    transform: scale(.92);
+    animation: popUp .7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .summary-title { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .summary-value { font-size: clamp(26px, 4vw, 42px); font-weight: 900; }
+  .summary-detail { margin-top: 5px; color: #d3edff; font-size: 13px; }
+
+  .fade-swap {
+    animation: fadeSwap .55s ease;
+  }
+
+  @keyframes rowIn { to { opacity: 1; transform: translateX(0);} }
+  @keyframes stepIn { to { opacity: 1; transform: translateY(0);} }
+  @keyframes popWeight {
+    0% { transform: scale(1.9) translateY(-5px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes popUp { to { opacity: 1; transform: scale(1);} }
+  @keyframes fadeSwap {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .calculation-wrap { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 10px; }
+    .card { border-radius: 18px; padding: 14px; }
+    .mode-btn { padding: 8px 12px; font-size: 12px; }
+    th, td { padding: 10px 8px; font-size: 12px; }
+    .panel { min-height: auto; }
+  }
+</style>
+</head>
+<body data-mode="weighted">
+  <main class="card" id="appCard">
+    <div class="hero">
+      <div class="title-wrap">
+        <h1>🎓 GPA 双模式动态演示</h1>
+        <div class="subtitle">Weighted 与 Unweighted 一键切换，乘法/加法过程可视化</div>
+      </div>
+      <div class="mode-switch" aria-label="模式切换">
+        <div class="slider" aria-hidden="true"></div>
+        <button class="mode-btn" data-mode="weighted">Weighted</button>
+        <button class="mode-btn" data-mode="unweighted">Unweighted</button>
+      </div>
+    </div>
+
+    <section class="stats-grid">
+      <div class="stat"><div class="label">当前模式</div><div class="value" id="modeName">Weighted</div></div>
+      <div class="stat"><div class="label">总权重 / 学分</div><div class="value" id="totalWeight">32</div></div>
+      <div class="stat"><div class="label">Cumulative GPA</div><div class="value" id="gpaValue">3.10</div></div>
+    </section>
+
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>课程名称</th>
+            <th>成绩分数</th>
+            <th>对应 GPA</th>
+            <th id="weightHeader">课程权重</th>
+            <th id="weightedHeader">加权得分</th>
+          </tr>
+        </thead>
+        <tbody id="courseRows"></tbody>
+      </table>
+    </div>
+
+    <section class="calculation-wrap">
+      <article class="panel">
+        <h3 id="mulTitle">🧮 乘法步骤</h3>
+        <div class="steps" id="mulSteps"></div>
+      </article>
+      <article class="panel">
+        <h3 id="addTitle">➕ 累加步骤</h3>
+        <div class="steps" id="addSteps"></div>
+      </article>
+    </section>
+
+    <section class="summary-box" id="summaryBox">
+      <div class="summary-title" id="summaryTitle">最终结果</div>
+      <div class="summary-value" id="summaryGpa">3.10</div>
+      <div class="summary-detail" id="summaryDetail">总加权得分: 99.28 ÷ 总权重: 32</div>
+    </section>
+  </main>
+
+<script>
+  const courses = [
+    ["EAP 英语", 89.68, 3.33, 4],
+    ["Literature 文学", 86.41, 3.00, 4],
+    ["Chinese 语文", 97.02, 4.33, 2],
+    ["Microeconomics 经济", 84.99, 3.00, 4],
+    ["Physics 1 物理", 79.74, 2.33, 4],
+    ["Pre Finance 金融", 85.86, 3.00, 4],
+    ["Calculus AB 微积分", 78.98, 2.33, 4],
+    ["Drama 戏剧", 87.05, 3.33, 2],
+    ["Seminar", 94.17, 4.00, 4]
+  ];
+
+  const appCard = document.getElementById('appCard');
+  const courseRows = document.getElementById('courseRows');
+  const mulSteps = document.getElementById('mulSteps');
+  const addSteps = document.getElementById('addSteps');
+
+  const modeName = document.getElementById('modeName');
+  const totalWeight = document.getElementById('totalWeight');
+  const gpaValue = document.getElementById('gpaValue');
+  const summaryGpa = document.getElementById('summaryGpa');
+  const summaryDetail = document.getElementById('summaryDetail');
+  const summaryTitle = document.getElementById('summaryTitle');
+  const weightHeader = document.getElementById('weightHeader');
+  const weightedHeader = document.getElementById('weightedHeader');
+  const summaryBox = document.getElementById('summaryBox');
+
+  function fmt(num) { return Number(num).toFixed(2); }
+
+  function build(mode = 'weighted') {
+    document.body.dataset.mode = mode;
+    appCard.classList.remove('fade-swap');
+    void appCard.offsetWidth;
+    appCard.classList.add('fade-swap');
+
+    const useWeighted = mode === 'weighted';
+    const weights = courses.map(c => useWeighted ? c[3] : 1);
+    const weightedScores = courses.map((c, i) => c[2] * weights[i]);
+    const totalW = weights.reduce((a,b) => a + b, 0);
+    const totalScore = weightedScores.reduce((a,b) => a + b, 0);
+    const gpa = totalScore / totalW;
+
+    modeName.textContent = useWeighted ? 'Weighted' : 'Unweighted';
+    totalWeight.textContent = String(totalW);
+    gpaValue.textContent = fmt(gpa);
+    summaryGpa.textContent = fmt(gpa);
+
+    weightHeader.textContent = useWeighted ? '课程权重' : '课程学分(统一=1)';
+    weightedHeader.textContent = useWeighted ? '加权得分' : '课程贡献分';
+
+    summaryTitle.textContent = useWeighted ? 'Weighted 最终结果' : 'Unweighted 最终结果';
+    summaryDetail.textContent = `总得分: ${fmt(totalScore)} ÷ 总${useWeighted ? '权重' : '学分'}: ${totalW}`;
+
+    courseRows.innerHTML = '';
+    mulSteps.innerHTML = '';
+    addSteps.innerHTML = '';
+
+    courses.forEach((c, idx) => {
+      const tr = document.createElement('tr');
+      tr.style.animationDelay = `${0.15 + idx * 0.16}s`;
+      const isChanged = useWeighted && (idx === 2 || idx === 7);
+      const weightCell = isChanged
+        ? `<span class="changed-weight">${weights[idx]}</span>`
+        : weights[idx];
+
+      tr.innerHTML = `
+        <td>${c[0]}</td>
+        <td>${fmt(c[1])}</td>
+        <td>${fmt(c[2])}</td>
+        <td>${weightCell}</td>
+        <td>${fmt(weightedScores[idx])}</td>`;
+      courseRows.appendChild(tr);
+
+      const mul = document.createElement('div');
+      mul.className = 'step';
+      mul.style.animationDelay = `${0.6 + idx * 0.16}s`;
+      mul.textContent = `${idx + 1}. ${fmt(c[2])} × ${weights[idx]} = ${fmt(weightedScores[idx])}`;
+      mulSteps.appendChild(mul);
+    });
+
+    let partial = 0;
+    weightedScores.forEach((val, idx) => {
+      const prev = partial;
+      partial += val;
+      const add = document.createElement('div');
+      add.className = 'step add';
+      add.style.animationDelay = `${1.9 + idx * 0.18}s`;
+      add.textContent = `${idx + 1}. ${fmt(prev)} + ${fmt(val)} = ${fmt(partial)}`;
+      addSteps.appendChild(add);
+    });
+
+    summaryBox.style.animationDelay = '3.9s';
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => build(btn.dataset.mode));
+  });
+
+  build('weighted');
+</script>
+</body>
+</html>
