@@ -1,408 +1,406 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GPA 双模式动态演示</title>
-<style>
-  :root {
-    --bg1: #071225;
-    --bg2: #0f2745;
-    --bg3: #1f3f6d;
-    --glass: rgba(255, 255, 255, 0.1);
-    --text: #eaf3ff;
-    --muted: #a7bfdc;
-    --accent: #6ae3ff;
-    --accent2: #7ef7b8;
-    --danger: #ff7f97;
-    --card-border: rgba(255, 255, 255, 0.16);
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPA 双模式动态演示</title>
+  <style>
+    :root {
+      --bg: #f5f8ff;
+      --bg-soft: #eef3ff;
+      --card: rgba(255, 255, 255, 0.82);
+      --line: #dbe4f4;
+      --text: #24324d;
+      --muted: #7b8ca9;
+      --primary: #7c9bff;
+      --primary-soft: #dfe8ff;
+      --accent: #8de0c7;
+      --shadow: 0 18px 44px rgba(98, 122, 178, 0.16);
+    }
 
-  * { box-sizing: border-box; }
+    * { box-sizing: border-box; }
 
-  body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    color: var(--text);
-    background:
-      radial-gradient(circle at 12% 18%, rgba(106, 227, 255, 0.22), transparent 35%),
-      radial-gradient(circle at 85% 12%, rgba(126, 247, 184, 0.14), transparent 30%),
-      radial-gradient(circle at 50% 100%, rgba(122, 140, 255, 0.24), transparent 45%),
-      linear-gradient(140deg, var(--bg1), var(--bg2) 45%, var(--bg3));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    overflow-x: hidden;
-  }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, #ffffff 0%, rgba(255,255,255,0) 34%),
+        radial-gradient(circle at 92% 0%, #f7fbff 0%, rgba(255,255,255,0) 35%),
+        linear-gradient(160deg, var(--bg), var(--bg-soft));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
 
-  .card {
-    width: min(1100px, 100%);
-    border-radius: 26px;
-    padding: clamp(18px, 3vw, 34px);
-    background: linear-gradient(140deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-    border: 1px solid var(--card-border);
-    box-shadow: 0 25px 60px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.15);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
+    .app {
+      width: min(1060px, 100%);
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      padding: clamp(14px, 3vw, 30px);
+      animation: elevate .7s ease;
+    }
 
-  .hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-bottom: 18px;
-  }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
 
-  .title-wrap h1 {
-    margin: 0;
-    font-size: clamp(24px, 4vw, 38px);
-    letter-spacing: 0.5px;
-  }
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 4vw, 34px);
+      letter-spacing: .4px;
+    }
 
-  .subtitle {
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: clamp(12px, 2.1vw, 15px);
-  }
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-  .mode-switch {
-    position: relative;
-    display: inline-flex;
-    background: rgba(4, 14, 30, 0.65);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 999px;
-    padding: 5px;
-    gap: 5px;
-    isolation: isolate;
-  }
+    .switch {
+      position: relative;
+      display: inline-flex;
+      background: #edf2ff;
+      border: 1px solid #d9e3ff;
+      border-radius: 999px;
+      padding: 4px;
+      min-width: 236px;
+    }
 
-  .slider {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    width: calc(50% - 5px);
-    height: calc(100% - 10px);
-    border-radius: 999px;
-    background: linear-gradient(120deg, rgba(106,227,255,0.95), rgba(126,247,184,0.95));
-    box-shadow: 0 8px 22px rgba(106,227,255,0.35);
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: 0;
-  }
+    .switch .indicator {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      width: calc(50% - 4px);
+      height: calc(100% - 8px);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #b8c8ff, #9ee8d4);
+      transition: transform .55s cubic-bezier(.22,1,.36,1), box-shadow .4s ease;
+      box-shadow: 0 10px 24px rgba(124, 155, 255, .3);
+    }
 
-  .mode-btn {
-    border: none;
-    background: transparent;
-    color: var(--text);
-    border-radius: 999px;
-    padding: 9px 18px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
-    transition: color .25s ease, transform .25s ease;
-    font-size: 14px;
-  }
+    body[data-mode="unweighted"] .indicator {
+      transform: translateX(100%);
+      box-shadow: 0 10px 24px rgba(141, 224, 199, .35);
+    }
 
-  .mode-btn:hover { transform: translateY(-1px); }
-  body[data-mode="unweighted"] .slider { transform: translateX(100%); }
+    .switch button {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      border: none;
+      background: transparent;
+      color: #30466f;
+      font-weight: 700;
+      padding: 9px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin: 14px 0 20px;
-  }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
 
-  .stat {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 12px 14px;
-  }
+    .metric {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--line);
+      transform: translateY(8px);
+      opacity: 0;
+      animation: rise .5s ease forwards;
+    }
 
-  .stat .label { color: var(--muted); font-size: 12px; }
-  .stat .value { margin-top: 6px; font-size: clamp(18px, 2.8vw, 30px); font-weight: 800; }
+    .metric:nth-child(2){ animation-delay: .08s; }
+    .metric:nth-child(3){ animation-delay: .16s; }
 
-  .table-shell {
-    overflow: auto;
-    border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.16);
-  }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { margin-top: 5px; font-size: clamp(20px,3vw,30px); font-weight: 800; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 760px;
-    background: rgba(1, 10, 24, 0.35);
-  }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: auto;
+      background: rgba(255,255,255,.7);
+    }
 
-  th, td {
-    padding: 12px 14px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    white-space: nowrap;
-  }
+    table {
+      width: 100%;
+      min-width: 740px;
+      border-collapse: collapse;
+    }
 
-  th {
-    color: #d5e7ff;
-    font-size: 13px;
-    letter-spacing: .4px;
-    background: rgba(255,255,255,0.08);
-  }
+    th, td {
+      padding: 11px 10px;
+      text-align: center;
+      border-bottom: 1px solid #eaf0fc;
+      font-size: 14px;
+    }
 
-  tbody tr {
-    opacity: 0;
-    transform: translateX(-18px);
-    animation: rowIn 0.45s ease forwards;
-  }
+    th {
+      font-size: 12px;
+      color: #5f7398;
+      letter-spacing: .4px;
+      background: #f6f9ff;
+    }
 
-  .changed-weight {
-    color: var(--danger);
-    font-weight: 800;
-    text-shadow: 0 0 10px rgba(255,127,151,.45);
-    animation: popWeight .7s cubic-bezier(0.175,0.885,0.32,1.275);
-  }
+    tbody tr {
+      opacity: 0;
+      transform: translateX(-14px);
+      animation: rowIn .45s ease forwards;
+    }
 
-  .calculation-wrap {
-    margin-top: 18px;
-    display: grid;
-    gap: 12px;
-    grid-template-columns: 1fr 1fr;
-  }
+    .changed {
+      color: #ff7794;
+      font-weight: 800;
+      animation: pulseIn .7s cubic-bezier(.175,.885,.32,1.275);
+      display: inline-block;
+    }
 
-  .panel {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.13);
-    border-radius: 16px;
-    padding: 14px;
-    min-height: 220px;
-  }
+    .grid {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
 
-  .panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.76);
+      padding: 12px;
+    }
 
-  .steps {
-    display: grid;
-    gap: 7px;
-  }
+    .panel h3 {
+      margin: 0 0 8px;
+      color: #3f5477;
+      font-size: 15px;
+      font-weight: 700;
+    }
 
-  .step {
-    opacity: 0;
-    transform: translateY(8px);
-    padding: 7px 9px;
-    border-radius: 10px;
-    font-size: 13px;
-    background: rgba(0,0,0,0.22);
-    border-left: 3px solid var(--accent);
-    animation: stepIn .35s ease forwards;
-  }
+    .steps {
+      display: grid;
+      gap: 6px;
+    }
 
-  .step.add { border-left-color: var(--accent2); }
+    .step {
+      font-size: 13px;
+      color: #2f4365;
+      border-left: 3px solid var(--primary);
+      background: #f8fbff;
+      border-radius: 8px;
+      padding: 7px 9px;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: stepIn .35s ease forwards;
+    }
 
-  .summary-box {
-    margin-top: 18px;
-    border-radius: 18px;
-    padding: 18px;
-    text-align: center;
-    background: linear-gradient(140deg, rgba(106,227,255,0.2), rgba(126,247,184,0.2));
-    border: 1px solid rgba(255,255,255,0.24);
-    box-shadow: 0 14px 30px rgba(0,0,0,.24);
-    opacity: 0;
-    transform: scale(.92);
-    animation: popUp .7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  }
+    .step.add { border-left-color: var(--accent); }
 
-  .summary-title { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-  .summary-value { font-size: clamp(26px, 4vw, 42px); font-weight: 900; }
-  .summary-detail { margin-top: 5px; color: #d3edff; font-size: 13px; }
+    .summary {
+      margin-top: 14px;
+      border-radius: 16px;
+      border: 1px solid #d8e3fb;
+      background: linear-gradient(140deg, #eef4ff, #ecfff8);
+      padding: 14px;
+      text-align: center;
+      opacity: 0;
+      transform: scale(.96);
+      animation: pop .6s cubic-bezier(.175,.885,.32,1.275) forwards;
+    }
 
-  .fade-swap {
-    animation: fadeSwap .55s ease;
-  }
+    .summary .title { color: var(--muted); font-size: 12px; }
+    .summary .gpa { margin-top: 6px; font-size: clamp(26px, 4vw, 40px); font-weight: 900; }
+    .summary .detail { margin-top: 4px; color: #5d7499; font-size: 13px; }
 
-  @keyframes rowIn { to { opacity: 1; transform: translateX(0);} }
-  @keyframes stepIn { to { opacity: 1; transform: translateY(0);} }
-  @keyframes popWeight {
-    0% { transform: scale(1.9) translateY(-5px); opacity: 0; }
-    100% { transform: scale(1) translateY(0); opacity: 1; }
-  }
-  @keyframes popUp { to { opacity: 1; transform: scale(1);} }
-  @keyframes fadeSwap {
-    0% { opacity: 0; transform: translateY(8px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
 
-  @media (max-width: 900px) {
-    .stats-grid { grid-template-columns: 1fr; }
-    .calculation-wrap { grid-template-columns: 1fr; }
-  }
+    @media (max-width: 620px) {
+      body { padding: 8px; }
+      .app { border-radius: 16px; padding: 12px; }
+      .switch { min-width: 210px; }
+      .switch button { font-size: 12px; padding: 8px 10px; }
+      th, td { font-size: 12px; padding: 9px 7px; }
+    }
 
-  @media (max-width: 640px) {
-    body { padding: 10px; }
-    .card { border-radius: 18px; padding: 14px; }
-    .mode-btn { padding: 8px 12px; font-size: 12px; }
-    th, td { padding: 10px 8px; font-size: 12px; }
-    .panel { min-height: auto; }
-  }
-</style>
+    @keyframes elevate { from { opacity: .4; transform: translateY(10px);} to {opacity:1; transform:none;} }
+    @keyframes rise { to { opacity: 1; transform: translateY(0);} }
+    @keyframes rowIn { to { opacity: 1; transform: translateX(0);} }
+    @keyframes stepIn { to { opacity: 1; transform: translateY(0);} }
+    @keyframes pulseIn { from { opacity: 0; transform: scale(1.5);} to { opacity: 1; transform: scale(1);} }
+    @keyframes pop { to { opacity: 1; transform: scale(1);} }
+  </style>
 </head>
 <body data-mode="weighted">
-  <main class="card" id="appCard">
-    <div class="hero">
-      <div class="title-wrap">
-        <h1>🎓 GPA 双模式动态演示</h1>
-        <div class="subtitle">Weighted 与 Unweighted 一键切换，乘法/加法过程可视化</div>
+  <main class="app" id="app">
+    <div class="topbar">
+      <div>
+        <h1>GPA 双模式计算</h1>
+        <div class="subtitle">简约淡色风格 · Weighted / Unweighted 都可视化</div>
       </div>
-      <div class="mode-switch" aria-label="模式切换">
-        <div class="slider" aria-hidden="true"></div>
-        <button class="mode-btn" data-mode="weighted">Weighted</button>
-        <button class="mode-btn" data-mode="unweighted">Unweighted</button>
+      <div class="switch" aria-label="模式切换">
+        <div class="indicator"></div>
+        <button data-mode="weighted">Weighted</button>
+        <button data-mode="unweighted">Unweighted</button>
       </div>
     </div>
 
-    <section class="stats-grid">
-      <div class="stat"><div class="label">当前模式</div><div class="value" id="modeName">Weighted</div></div>
-      <div class="stat"><div class="label">总权重 / 学分</div><div class="value" id="totalWeight">32</div></div>
-      <div class="stat"><div class="label">Cumulative GPA</div><div class="value" id="gpaValue">3.10</div></div>
+    <section class="metrics">
+      <div class="metric"><div class="label">当前模式</div><div class="value" id="modeName">Weighted</div></div>
+      <div class="metric"><div class="label">总权重 / 学分</div><div class="value" id="totalUnits">32</div></div>
+      <div class="metric"><div class="label">Cumulative GPA</div><div class="value" id="gpaVal">3.10</div></div>
     </section>
 
-    <div class="table-shell">
+    <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>课程名称</th>
             <th>成绩分数</th>
             <th>对应 GPA</th>
-            <th id="weightHeader">课程权重</th>
-            <th id="weightedHeader">加权得分</th>
+            <th id="unitsHeader">课程权重</th>
+            <th id="contribHeader">加权得分</th>
           </tr>
         </thead>
-        <tbody id="courseRows"></tbody>
+        <tbody id="rows"></tbody>
       </table>
     </div>
 
-    <section class="calculation-wrap">
+    <section class="grid">
       <article class="panel">
-        <h3 id="mulTitle">🧮 乘法步骤</h3>
+        <h3 id="mulTitle">乘法步骤</h3>
         <div class="steps" id="mulSteps"></div>
       </article>
       <article class="panel">
-        <h3 id="addTitle">➕ 累加步骤</h3>
+        <h3 id="addTitle">加法步骤</h3>
         <div class="steps" id="addSteps"></div>
       </article>
     </section>
 
-    <section class="summary-box" id="summaryBox">
-      <div class="summary-title" id="summaryTitle">最终结果</div>
-      <div class="summary-value" id="summaryGpa">3.10</div>
-      <div class="summary-detail" id="summaryDetail">总加权得分: 99.28 ÷ 总权重: 32</div>
+    <section class="summary" id="summary">
+      <div class="title" id="sumTitle">Weighted 结果</div>
+      <div class="gpa" id="sumGpa">3.10</div>
+      <div class="detail" id="sumDetail">总分: 99.28 ÷ 总权重: 32</div>
     </section>
   </main>
 
-<script>
-  const courses = [
-    ["EAP 英语", 89.68, 3.33, 4],
-    ["Literature 文学", 86.41, 3.00, 4],
-    ["Chinese 语文", 97.02, 4.33, 2],
-    ["Microeconomics 经济", 84.99, 3.00, 4],
-    ["Physics 1 物理", 79.74, 2.33, 4],
-    ["Pre Finance 金融", 85.86, 3.00, 4],
-    ["Calculus AB 微积分", 78.98, 2.33, 4],
-    ["Drama 戏剧", 87.05, 3.33, 2],
-    ["Seminar", 94.17, 4.00, 4]
-  ];
+  <script>
+    const courses = [
+      ["EAP 英语", 89.68, 3.33, 4],
+      ["Literature 文学", 86.41, 3.00, 4],
+      ["Chinese 语文", 97.02, 4.33, 2],
+      ["Microeconomics 经济", 84.99, 3.00, 4],
+      ["Physics 1 物理", 79.74, 2.33, 4],
+      ["Pre Finance 金融", 85.86, 3.00, 4],
+      ["Calculus AB 微积分", 78.98, 2.33, 4],
+      ["Drama 戏剧", 87.05, 3.33, 2],
+      ["Seminar", 94.17, 4.00, 4]
+    ];
 
-  const appCard = document.getElementById('appCard');
-  const courseRows = document.getElementById('courseRows');
-  const mulSteps = document.getElementById('mulSteps');
-  const addSteps = document.getElementById('addSteps');
+    const rows = document.getElementById('rows');
+    const mulSteps = document.getElementById('mulSteps');
+    const addSteps = document.getElementById('addSteps');
 
-  const modeName = document.getElementById('modeName');
-  const totalWeight = document.getElementById('totalWeight');
-  const gpaValue = document.getElementById('gpaValue');
-  const summaryGpa = document.getElementById('summaryGpa');
-  const summaryDetail = document.getElementById('summaryDetail');
-  const summaryTitle = document.getElementById('summaryTitle');
-  const weightHeader = document.getElementById('weightHeader');
-  const weightedHeader = document.getElementById('weightedHeader');
-  const summaryBox = document.getElementById('summaryBox');
+    const modeName = document.getElementById('modeName');
+    const totalUnits = document.getElementById('totalUnits');
+    const gpaVal = document.getElementById('gpaVal');
+    const unitsHeader = document.getElementById('unitsHeader');
+    const contribHeader = document.getElementById('contribHeader');
+    const sumTitle = document.getElementById('sumTitle');
+    const sumGpa = document.getElementById('sumGpa');
+    const sumDetail = document.getElementById('sumDetail');
+    const summary = document.getElementById('summary');
 
-  function fmt(num) { return Number(num).toFixed(2); }
+    const app = document.getElementById('app');
 
-  function build(mode = 'weighted') {
-    document.body.dataset.mode = mode;
-    appCard.classList.remove('fade-swap');
-    void appCard.offsetWidth;
-    appCard.classList.add('fade-swap');
+    function n(v) { return Number(v).toFixed(2); }
 
-    const useWeighted = mode === 'weighted';
-    const weights = courses.map(c => useWeighted ? c[3] : 1);
-    const weightedScores = courses.map((c, i) => c[2] * weights[i]);
-    const totalW = weights.reduce((a,b) => a + b, 0);
-    const totalScore = weightedScores.reduce((a,b) => a + b, 0);
-    const gpa = totalScore / totalW;
+    function render(mode = 'weighted') {
+      const weighted = mode === 'weighted';
+      document.body.dataset.mode = mode;
 
-    modeName.textContent = useWeighted ? 'Weighted' : 'Unweighted';
-    totalWeight.textContent = String(totalW);
-    gpaValue.textContent = fmt(gpa);
-    summaryGpa.textContent = fmt(gpa);
+      app.animate(
+        [{ opacity: 0.65, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
 
-    weightHeader.textContent = useWeighted ? '课程权重' : '课程学分(统一=1)';
-    weightedHeader.textContent = useWeighted ? '加权得分' : '课程贡献分';
+      const units = courses.map(c => (weighted ? c[3] : 1));
+      const contrib = courses.map((c, i) => c[2] * units[i]);
+      const sumContrib = contrib.reduce((a, b) => a + b, 0);
+      const sumUnits = units.reduce((a, b) => a + b, 0);
+      const gpa = sumContrib / sumUnits;
 
-    summaryTitle.textContent = useWeighted ? 'Weighted 最终结果' : 'Unweighted 最终结果';
-    summaryDetail.textContent = `总得分: ${fmt(totalScore)} ÷ 总${useWeighted ? '权重' : '学分'}: ${totalW}`;
+      modeName.textContent = weighted ? 'Weighted' : 'Unweighted';
+      totalUnits.textContent = String(sumUnits);
+      gpaVal.textContent = n(gpa);
+      sumGpa.textContent = n(gpa);
 
-    courseRows.innerHTML = '';
-    mulSteps.innerHTML = '';
-    addSteps.innerHTML = '';
+      unitsHeader.textContent = weighted ? '课程权重' : '课程学分(全=1)';
+      contribHeader.textContent = weighted ? '加权得分' : '课程贡献分';
+      sumTitle.textContent = weighted ? 'Weighted 结果' : 'Unweighted 结果';
+      sumDetail.textContent = `总分: ${n(sumContrib)} ÷ 总${weighted ? '权重' : '学分'}: ${sumUnits}`;
 
-    courses.forEach((c, idx) => {
-      const tr = document.createElement('tr');
-      tr.style.animationDelay = `${0.15 + idx * 0.16}s`;
-      const isChanged = useWeighted && (idx === 2 || idx === 7);
-      const weightCell = isChanged
-        ? `<span class="changed-weight">${weights[idx]}</span>`
-        : weights[idx];
+      rows.innerHTML = '';
+      mulSteps.innerHTML = '';
+      addSteps.innerHTML = '';
 
-      tr.innerHTML = `
-        <td>${c[0]}</td>
-        <td>${fmt(c[1])}</td>
-        <td>${fmt(c[2])}</td>
-        <td>${weightCell}</td>
-        <td>${fmt(weightedScores[idx])}</td>`;
-      courseRows.appendChild(tr);
+      courses.forEach((c, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = `${0.10 + idx * 0.08}s`;
 
-      const mul = document.createElement('div');
-      mul.className = 'step';
-      mul.style.animationDelay = `${0.6 + idx * 0.16}s`;
-      mul.textContent = `${idx + 1}. ${fmt(c[2])} × ${weights[idx]} = ${fmt(weightedScores[idx])}`;
-      mulSteps.appendChild(mul);
+        const changed = weighted && (idx === 2 || idx === 7);
+        tr.innerHTML = `
+          <td>${c[0]}</td>
+          <td>${n(c[1])}</td>
+          <td>${n(c[2])}</td>
+          <td>${changed ? `<span class="changed">${units[idx]}</span>` : units[idx]}</td>
+          <td>${n(contrib[idx])}</td>
+        `;
+        rows.appendChild(tr);
+
+        const mul = document.createElement('div');
+        mul.className = 'step';
+        mul.style.animationDelay = `${0.5 + idx * 0.08}s`;
+        mul.textContent = `${idx + 1}. ${n(c[2])} × ${units[idx]} = ${n(contrib[idx])}`;
+        mulSteps.appendChild(mul);
+      });
+
+      let partial = 0;
+      contrib.forEach((v, idx) => {
+        const add = document.createElement('div');
+        add.className = 'step add';
+        add.style.animationDelay = `${1.2 + idx * 0.09}s`;
+        add.textContent = `${idx + 1}. ${n(partial)} + ${n(v)} = ${n(partial + v)}`;
+        partial += v;
+        addSteps.appendChild(add);
+      });
+
+      summary.style.animation = 'none';
+      void summary.offsetWidth;
+      summary.style.animation = 'pop .6s cubic-bezier(.175,.885,.32,1.275) 2.15s forwards';
+    }
+
+    document.querySelectorAll('.switch button').forEach(btn => {
+      btn.addEventListener('click', () => render(btn.dataset.mode));
     });
 
-    let partial = 0;
-    weightedScores.forEach((val, idx) => {
-      const prev = partial;
-      partial += val;
-      const add = document.createElement('div');
-      add.className = 'step add';
-      add.style.animationDelay = `${1.9 + idx * 0.18}s`;
-      add.textContent = `${idx + 1}. ${fmt(prev)} + ${fmt(val)} = ${fmt(partial)}`;
-      addSteps.appendChild(add);
-    });
-
-    summaryBox.style.animationDelay = '3.9s';
-  }
-
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => build(btn.dataset.mode));
-  });
-
-  build('weighted');
-</script>
+    render('weighted');
+  </script>
 </body>
 </html>
